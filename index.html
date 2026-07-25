@@ -281,7 +281,9 @@ function doPair(){
     const cfg=JSON.parse(b64d(raw));
     if(!cfg.i||!cfg.t||!cfg.n){err.textContent="رمز الدعوة غير مكتمل، اطلب رمزاً جديداً";return;}
     CFG=cfg; lsSet(CFG_KEY,cfg);
-    if(!localStorage.getItem(MODE_KEY))lsSet(MODE_KEY,cfg.s?"server":"file");
+    // الربط بدعوة جديدة يعيد ضبط طريقة الإرسال حسب إعدادات المدرسة الحالية،
+    // وإلا بقي المعلم على "ملف" حتى بعد أن يفعّل رائد النشاط الاستقبال المباشر.
+    lsSet(MODE_KEY,cfg.s?"server":"file");
     startApp();
     toast("✅ تم ربط التطبيق بنجاح");
   }catch(e){ err.textContent="رمز الدعوة غير صحيح، تأكد من نسخه كاملاً"; }
