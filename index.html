@@ -84,6 +84,32 @@ nav button.on{color:var(--g);}
 #toast.on{opacity:1;}
 .note{background:var(--gp);border-radius:10px;padding:11px;font-size:12.5px;line-height:1.8;color:var(--tx);}
 .warn{background:#fff3cd;border-radius:10px;padding:11px;font-size:12.5px;line-height:1.8;}
+
+/* ── توليد تلقائي ── */
+.gen-btn{background:var(--gp);border:1.5px solid var(--gl);color:var(--g);border-radius:9px;padding:7px 13px;font-size:12.5px;font-weight:800;cursor:pointer;margin-bottom:7px;}
+.gen-btn:active{background:var(--gl);color:#fff;}
+
+/* ── التوقيع الإلكتروني ── */
+.sig-wrap{border:2px dashed var(--br);border-radius:12px;background:#fff;overflow:hidden;}
+#sig-pad{display:block;width:100%;height:170px;touch-action:none;cursor:crosshair;}
+.sig-done{border:2px solid var(--gl);border-radius:12px;padding:9px;background:#fafdfb;text-align:center;}
+.sig-done img{max-width:100%;max-height:150px;}
+
+/* ── المسودات ── */
+.draft{border:1px solid var(--br);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff;}
+.draft .t{font-weight:800;font-size:14.5px;color:var(--g);}
+.draft .m{font-size:11.5px;color:var(--mu);margin:3px 0 9px;}
+.draft-acts{display:flex;gap:7px;flex-wrap:wrap;}
+.draft-acts .btn{width:auto;flex:1;min-width:90px;padding:9px;font-size:12.5px;border-radius:9px;}
+
+/* ── مفتاح التبديل ── */
+.sw-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.sw{position:relative;width:52px;height:30px;flex-shrink:0;}
+.sw input{opacity:0;width:0;height:0;position:absolute;}
+.sw .track{position:absolute;inset:0;background:#c8ddd0;border-radius:30px;transition:.2s;cursor:pointer;}
+.sw .track:before{content:"";position:absolute;height:24px;width:24px;right:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+.sw input:checked+.track{background:var(--gl);}
+.sw input:checked+.track:before{transform:translateX(-22px);}
 </style>
 </head>
 <body>
@@ -113,6 +139,11 @@ nav button.on{color:var(--g);}
       <div class="card-h">📌 بيانات البرنامج</div>
       <div class="card-b">
         <div class="fg">
+          <label>المعلم المُعِدّ للتقرير</label>
+          <input id="f-tch" placeholder="اسم المعلم المنفّذ">
+          <div class="hint">يظهر هذا الاسم في التقرير عند رائد النشاط.</div>
+        </div>
+        <div class="fg">
           <label>مجال النشاط</label>
           <select id="f-dom" onchange="onDomChange()"></select>
         </div>
@@ -132,6 +163,23 @@ nav button.on{color:var(--g);}
               <div class="chip" data-sem="الثاني" onclick="pickSem(this)">الثاني</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">🎯 وصف البرنامج وأهدافه</div>
+      <div class="card-b">
+        <div class="fg">
+          <label>وصف البرنامج</label>
+          <button type="button" class="gen-btn" onclick="genDesc()">✨ توليد وصف تلقائي</button>
+          <textarea id="f-desc" placeholder="وصف مختصر للبرنامج وطريقة تنفيذه..."></textarea>
+        </div>
+        <div class="fg">
+          <label>أهداف البرنامج</label>
+          <button type="button" class="gen-btn" onclick="genGoals()">✨ توليد أهداف تلقائية</button>
+          <textarea id="f-goals" style="min-height:118px;" placeholder="هدف في كل سطر..."></textarea>
+          <div class="hint">يُولَّد الوصف والأهداف حسب المجال واسم البرنامج المختار، وتقدر تعدّلهما بحرية.</div>
         </div>
       </div>
     </div>
@@ -192,9 +240,20 @@ nav button.on{color:var(--g);}
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-h">✍️ توقيع المعلم</div>
+      <div class="card-b" id="sig-box"></div>
+    </div>
+
     <button class="btn btn-p" onclick="submitReport()">📤 إرسال التقرير لرائد النشاط</button>
-    <button class="btn btn-o" onclick="saveDraft(true)">💾 حفظ كمسودة</button>
+    <button class="btn btn-o" onclick="saveDraftNamed()">💾 حفظ في المسودات</button>
     <button class="btn btn-d" onclick="clearReport()">🗑️ تفريغ النموذج</button>
+  </div>
+
+  <!-- ═══ المسودات ═══ -->
+  <div class="view" id="v-drafts">
+    <div class="note" style="margin-bottom:12px;">المسودات محفوظة في جوالك فقط. تقدر تعدّلها أو تحذفها أو ترسلها في أي وقت.</div>
+    <div id="drafts-list"></div>
   </div>
 
   <!-- ═══ خطة المجال ═══ -->
@@ -238,13 +297,28 @@ nav button.on{color:var(--g);}
         <div class="hint" id="mode-hint" style="margin-top:9px;"></div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-h">💾 الحفظ</div>
+      <div class="card-b">
+        <div class="sw-row">
+          <div>
+            <div style="font-weight:800;font-size:13.5px;color:var(--g);">الحفظ التلقائي</div>
+            <div class="hint" style="margin-top:2px;">يحفظ ما تكتبه أولاً بأول حتى لو أُغلق التطبيق فجأة.</div>
+          </div>
+          <label class="sw"><input type="checkbox" id="sw-autosave" onchange="toggleAutosave(this.checked)"><span class="track"></span></label>
+        </div>
+        <button class="btn btn-o" style="margin-top:12px;" onclick="saveDraft(true)">💾 حفظ الآن</button>
+      </div>
+    </div>
+
     <button class="btn btn-d" onclick="unpair()">🚪 فصل التطبيق عن المدرسة</button>
   </div>
 </main>
 
 <nav>
   <button class="on" data-v="report" onclick="showView('report',this)"><span class="ic">📝</span>تقرير</button>
-  <button data-v="plan" onclick="showView('plan',this)"><span class="ic">🗂️</span>خطة المجال</button>
+  <button data-v="drafts" onclick="showView('drafts',this)"><span class="ic">📄</span>المسودات</button>
+  <button data-v="plan" onclick="showView('plan',this)"><span class="ic">🗂️</span>الخطة</button>
   <button data-v="sent" onclick="showView('sent',this)"><span class="ic">📤</span>المرسل</button>
   <button data-v="me" onclick="showView('me',this)"><span class="ic">👤</span>حسابي</button>
 </nav>
@@ -258,8 +332,9 @@ const AIP={"المواطنة والحياة":["التطوع الطلابي","م�
 const DOMAINS=Object.keys(AIP);
 
 /* ══════════ الحالة ══════════ */
-const CFG_KEY="nt_cfg", DRAFT_KEY="nt_draft", SENT_KEY="nt_sent", PLAN_KEY="nt_plan", MODE_KEY="nt_mode";
-let CFG=null, photos=[null,null,null,null], planRows=[], sem="", ico="";
+const CFG_KEY="nt_cfg", DRAFT_KEY="nt_draft", SENT_KEY="nt_sent", PLAN_KEY="nt_plan", MODE_KEY="nt_mode",
+      DRAFTS_KEY="nt_drafts", AUTOSAVE_KEY="nt_autosave";
+let CFG=null, photos=[null,null,null,null], planRows=[], sem="", ico="", signature="", editingDraftId=null;
 
 /* ══════════ أدوات ══════════ */
 function $(id){return document.getElementById(id);}
@@ -305,15 +380,20 @@ function startApp(){
   sel.innerHTML=list.map(d=>`<option>${esc(d)}</option>`).join("");
   onDomChange();
   $("plan-note").innerHTML=`تُرسل هذه الخطة لرائد النشاط كمقترح لمجال <b>${esc(list[0])}</b>، ويعتمدها في خطة المدرسة.`;
-  renderPhotos(); loadDraft(); planRows=lsGet(PLAN_KEY,[]); renderPlan(); renderSent(); renderMe();
+  $("f-tch").value=CFG.n||"";
+  renderPhotos(); renderSig(); loadDraft(); renderDrafts();
+  planRows=lsGet(PLAN_KEY,[]); renderPlan(); renderSent(); renderMe();
 }
 function showView(v,btn){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   $("v-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.remove("on"));
   if(btn)btn.classList.add("on");
-  $("hd-title").textContent={report:"تقرير حصة النشاط",plan:"خطة المجال",sent:"التقارير المرسلة",me:"حسابي"}[v];
+  $("hd-title").textContent={report:"تقرير حصة النشاط",drafts:"المسودات المحفوظة",plan:"خطة المجال",sent:"التقارير المرسلة",me:"حسابي"}[v];
   if(v==="sent")renderSent();
+  if(v==="drafts")renderDrafts();
+  // لوحة التوقيع تحتاج عرضاً فعلياً لتُرسم، ولا يتوفر ذلك وهي مخفية
+  if(v==="report"&&!signature){const c=$("sig-pad");if(!c||!c.width)renderSig();}
   window.scrollTo(0,0);
 }
 
@@ -359,31 +439,167 @@ function compress(file,done){
 }
 
 /* ══════════ المسودة ══════════ */
-const FIELDS=["f-dom","f-prog","f-sess","f-sday","f-sweek","f-sdate","f-eday","f-eweek","f-edate","f-cls","f-stu","f-dis","f-par","f-pn","f-pname","f-notes"];
-function saveDraft(manual){
-  const d={sem,ico,photos};FIELDS.forEach(f=>d[f]=$(f).value);
-  lsSet(DRAFT_KEY,d);
-  if(manual)toast("💾 تم حفظ المسودة");
+const FIELDS=["f-tch","f-dom","f-prog","f-desc","f-goals","f-sess","f-sday","f-sweek","f-sdate","f-eday","f-eweek","f-edate","f-cls","f-stu","f-dis","f-par","f-pn","f-pname","f-notes"];
+function formSnapshot(){
+  const d={sem,ico,photos,signature};
+  FIELDS.forEach(f=>d[f]=$(f).value);
+  return d;
 }
-function loadDraft(){
-  const d=lsGet(DRAFT_KEY,null);if(!d)return;
+function applySnapshot(d){
+  if(!d)return;
   FIELDS.forEach(f=>{if(d[f]!=null&&$(f))$(f).value=d[f];});
   onDomChange();if(d["f-dom"])$("f-dom").value=d["f-dom"];
-  sem=d.sem||"";ico=d.ico||"";
+  sem=d.sem||"";ico=d.ico||"";signature=d.signature||"";
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
   if(sem){const el=document.querySelector(`[data-sem="${sem}"]`);if(el)el.classList.add("on");}
   if(ico){const el=document.querySelector(`[data-ico="${ico}"]`);if(el)el.classList.add("on");}
   photos=Array.isArray(d.photos)&&d.photos.length===4?d.photos:[null,null,null,null];
-  renderPhotos();
+  renderPhotos();renderSig();
+}
+function autosaveOn(){return lsGet(AUTOSAVE_KEY,true);}
+function toggleAutosave(v){
+  lsSet(AUTOSAVE_KEY,!!v);
+  if(v)saveDraft();
+  toast(v?"✅ الحفظ التلقائي مفعّل":"⏸️ أُوقف الحفظ التلقائي — احفظ يدوياً");
+}
+function saveDraft(manual){
+  lsSet(DRAFT_KEY,formSnapshot());
+  if(manual)toast("💾 تم الحفظ");
+}
+function loadDraft(){applySnapshot(lsGet(DRAFT_KEY,null));}
+function resetForm(){
+  FIELDS.forEach(f=>{if(f!=="f-dom"&&f!=="f-tch")$(f).value="";});
+  $("f-tch").value=(CFG&&CFG.n)||"";
+  ["f-dis","f-par","f-pn"].forEach(f=>$(f).value="0");
+  sem="";ico="";signature="";photos=[null,null,null,null];editingDraftId=null;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
+  renderPhotos();renderSig();localStorage.removeItem(DRAFT_KEY);
 }
 function clearReport(){
   if(!confirm("تفريغ جميع الحقول؟"))return;
-  FIELDS.forEach(f=>{if(f!=="f-dom")$(f).value="";});
-  ["f-dis","f-par","f-pn"].forEach(f=>$(f).value="0");
-  sem="";ico="";photos=[null,null,null,null];
-  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
-  renderPhotos();localStorage.removeItem(DRAFT_KEY);toast("🗑️ تم تفريغ النموذج");
+  resetForm();toast("🗑️ تم تفريغ النموذج");
 }
-document.addEventListener("input",e=>{if(e.target.id&&e.target.id.startsWith("f-"))saveDraft();});
+document.addEventListener("input",e=>{if(e.target.id&&e.target.id.startsWith("f-")&&autosaveOn())saveDraft();});
+
+/* ══════════ توليد الوصف والأهداف تلقائياً ══════════ */
+const GOAL_BANK={
+  "المواطنة والحياة":["تعزيز الانتماء الوطني والاعتزاز بالهوية السعودية","ترسيخ القيم الإسلامية والسلوك الإيجابي لدى الطلاب","تنمية روح المسؤولية المجتمعية والعمل التطوعي","تعزيز مفهوم المواطنة الفاعلة والمشاركة المجتمعية"],
+  "العلوم والتقنية":["تنمية التفكير العلمي ومهارات البحث والاستقصاء","تشجيع الابتكار وتوظيف التقنية في حل المشكلات","ربط المفاهيم العلمية بالتطبيقات الحياتية","إكساب الطلاب مهارات رقمية آمنة ومسؤولة"],
+  "الثقافة والفنون":["تنمية الذائقة الأدبية والفنية لدى الطلاب","اكتشاف المواهب الثقافية والفنية ورعايتها","تعزيز الاعتزاز باللغة العربية والموروث الوطني","تنمية مهارات التعبير والإلقاء والعرض أمام الجمهور"],
+  "الرياضة والصحة":["تعزيز اللياقة البدنية وثقافة نمط الحياة الصحي","نشر الوعي بالغذاء الصحي وأساليب الوقاية","تنمية روح الفريق والمنافسة الشريفة","استثمار طاقة الطلاب فيما يعود بالنفع على صحتهم"],
+  "النشاط الكشفي":["تنمية الاعتماد على النفس وتحمل المسؤولية","ترسيخ الانضباط والعمل الجماعي المنظم","إكساب الطلاب المهارات الكشفية والحياتية","تعزيز قيم الخدمة العامة ونفع الآخرين"],
+  "الأيام والمناسبات":["إبراز أهمية المناسبة وترسيخ دلالاتها لدى الطلاب","ربط الطالب بوطنه ومجتمعه من خلال الفعاليات","تفعيل المناسبة بأنشطة تعليمية وتوعوية هادفة","توثيق مشاركة المدرسة في المناسبات الوطنية والعالمية"],
+  "الفترات اللاصفية":["استثمار أوقات الطلاب فيما ينمي مهاراتهم","تنمية المهارات الحياتية والاجتماعية","تعزيز السلوك الإيجابي داخل البيئة المدرسية","إتاحة فرص متنوعة لاكتشاف ميول الطلاب"]
+};
+const GOAL_COMMON=["تنمية مهارات العمل الجماعي والتواصل الفعّال","اكتشاف مواهب الطلاب وصقلها في بيئة محفّزة","تعزيز ثقة الطالب بنفسه وقدرته على المبادرة","إتاحة الفرصة لأكبر عدد من الطلاب للمشاركة الفاعلة"];
+
+function genGoals(){
+  const pool=(GOAL_BANK[$("f-dom").value]||[]).concat(GOAL_COMMON);
+  const picked=pool.slice(0,5);
+  $("f-goals").value=picked.map((g,i)=>`${i+1}. ${g}`).join("\n");
+  if(autosaveOn())saveDraft();
+  toast("✨ تم توليد الأهداف — عدّلها كما تشاء");
+}
+function genDesc(){
+  const dom=$("f-dom").value, prog=($("f-prog").value||"").trim();
+  if(!prog){toast("⚠️ اكتب اسم البرنامج أولاً");return;}
+  const sess=$("f-sess").value, cls=($("f-cls").value||"").trim(), stu=$("f-stu").value;
+  const who=cls?`طلاب ${cls}`:"طلاب المدرسة";
+  const count=stu?` بمشاركة ${stu} طالباً`:"";
+  const dur=sess?`على مدى ${sess} حصص`:"خلال الفترة المخصصة له";
+  const aim=(GOAL_BANK[dom]||GOAL_COMMON)[0];
+  $("f-desc").value=
+    `نُفِّذ برنامج «${prog}» ضمن مجال ${dom} مستهدفاً ${who}${count}، ${dur}. `+
+    `ويسعى البرنامج إلى ${aim}، من خلال أنشطة عملية وتفاعلية تتيح للطلاب المشاركة المباشرة `+
+    `والتطبيق الفعلي، مع توثيق مراحل التنفيذ بالصور والشواهد وقياس أثره على المشاركين.`;
+  if(autosaveOn())saveDraft();
+  toast("✨ تم توليد الوصف — عدّله كما تشاء");
+}
+
+/* ══════════ التوقيع الإلكتروني ══════════ */
+let sigCtx=null, sigDrawn=false;
+function renderSig(){
+  const box=$("sig-box");if(!box)return;
+  if(signature){
+    box.innerHTML=`<div class="sig-done"><img src="${signature}" alt="توقيع المعلم"></div>
+      <button class="btn btn-o" style="margin-top:10px;" onclick="clearSig()">✏️ إعادة التوقيع</button>`;
+    sigCtx=null;return;
+  }
+  box.innerHTML=`<div class="sig-wrap"><canvas id="sig-pad"></canvas></div>
+    <div class="hint">وقّع بإصبعك داخل المربع، ثم اضغط اعتماد.</div>
+    <div style="display:flex;gap:8px;margin-top:9px;">
+      <button class="btn btn-p btn-sm" style="flex:1;" onclick="saveSig()">✅ اعتماد التوقيع</button>
+      <button class="btn btn-o btn-sm" style="flex:1;" onclick="wipeSigPad()">🧽 مسح</button>
+    </div>`;
+  initSigPad();
+}
+function initSigPad(){
+  const c=$("sig-pad");if(!c)return;
+  const w=c.getBoundingClientRect().width||300, dpr=window.devicePixelRatio||1;
+  c.width=Math.round(w*dpr);c.height=Math.round(170*dpr);
+  sigCtx=c.getContext("2d");sigCtx.scale(dpr,dpr);
+  sigCtx.lineWidth=2.4;sigCtx.lineCap="round";sigCtx.lineJoin="round";sigCtx.strokeStyle="#12331f";
+  sigDrawn=false;
+  let drawing=false;
+  const pos=e=>{const b=c.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top];};
+  c.addEventListener("pointerdown",e=>{e.preventDefault();drawing=true;sigDrawn=true;const[x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y);c.setPointerCapture(e.pointerId);});
+  c.addEventListener("pointermove",e=>{if(!drawing)return;e.preventDefault();const[x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke();});
+  c.addEventListener("pointerup",()=>{drawing=false;});
+  c.addEventListener("pointercancel",()=>{drawing=false;});
+}
+function wipeSigPad(){const c=$("sig-pad");if(c&&sigCtx){sigCtx.clearRect(0,0,c.width,c.height);sigDrawn=false;}}
+function saveSig(){
+  if(!sigDrawn){toast("⚠️ وقّع داخل المربع أولاً");return;}
+  signature=$("sig-pad").toDataURL("image/png");
+  renderSig();if(autosaveOn())saveDraft();
+  toast("✅ تم اعتماد التوقيع");
+}
+function clearSig(){signature="";renderSig();if(autosaveOn())saveDraft();}
+
+/* ══════════ المسودات المحفوظة ══════════ */
+function saveDraftNamed(){
+  const prog=($("f-prog").value||"").trim();
+  if(!prog){toast("⚠️ اكتب اسم البرنامج قبل الحفظ");return;}
+  const list=lsGet(DRAFTS_KEY,[]);
+  const snap=formSnapshot(), now=new Date().toLocaleString("ar-SA");
+  const i=editingDraftId?list.findIndex(d=>d.id===editingDraftId):-1;
+  if(i>=0){list[i]={...list[i],title:prog,at:now,data:snap};}
+  else{editingDraftId="d"+Date.now();list.unshift({id:editingDraftId,title:prog,at:now,data:snap});}
+  lsSet(DRAFTS_KEY,list.slice(0,40));
+  renderDrafts();toast("💾 حُفظت في المسودات");
+}
+function renderDrafts(){
+  const el=$("drafts-list");if(!el)return;
+  const list=lsGet(DRAFTS_KEY,[]);
+  el.innerHTML=list.length?list.map(d=>
+    `<div class="draft">
+      <div class="t">📝 ${esc(d.title)}</div>
+      <div class="m">${esc(d.at)}${d.id===editingDraftId?" · مفتوحة للتعديل":""}${(d.data&&d.data.signature)?" · موقّعة ✍️":""}</div>
+      <div class="draft-acts">
+        <button class="btn btn-p" onclick="editDraft('${d.id}')">✏️ تعديل</button>
+        <button class="btn btn-o" onclick="sendDraft('${d.id}')">📤 إرسال</button>
+        <button class="btn btn-d" onclick="delDraft('${d.id}')">🗑️ حذف</button>
+      </div>
+    </div>`).join("")
+    :`<div class="empty"><span class="ic">📄</span>لا توجد مسودات محفوظة</div>`;
+}
+function editDraft(id){
+  const d=lsGet(DRAFTS_KEY,[]).find(x=>x.id===id);if(!d)return;
+  applySnapshot(d.data);editingDraftId=id;
+  showView("report",document.querySelector('nav button[data-v="report"]'));
+  toast("✏️ فُتحت المسودة للتعديل");
+}
+function delDraft(id){
+  if(!confirm("حذف هذه المسودة نهائياً؟"))return;
+  lsSet(DRAFTS_KEY,lsGet(DRAFTS_KEY,[]).filter(x=>x.id!==id));
+  if(editingDraftId===id)editingDraftId=null;
+  renderDrafts();toast("🗑️ حُذفت المسودة");
+}
+async function sendDraft(id){
+  const d=lsGet(DRAFTS_KEY,[]).find(x=>x.id===id);if(!d)return;
+  applySnapshot(d.data);editingDraftId=id;
+  await submitReport();
+}
 
 /* ══════════ بناء التقرير بنفس بنية البرنامج المكتبي ══════════ */
 function buildReport(){
@@ -393,7 +609,10 @@ function buildReport(){
     endDay:$("f-eday").value, endWeek:$("f-eweek").value, endDate:$("f-edate").value,
     cls:$("f-cls").value, stu:$("f-stu").value, disabled:$("f-dis").value,
     parents:$("f-par").value, partners:$("f-pn").value, partnerName:$("f-pname").value,
-    madrasati:ico, notes:$("f-notes").value, tch:CFG.n,
+    madrasati:ico, notes:$("f-notes").value,
+    tch:($("f-tch").value||"").trim()||CFG.n,
+    desc:$("f-desc").value.trim(), goals:$("f-goals").value.trim(),
+    signature:signature||"",
     date:new Date().toLocaleDateString("ar-SA"),
     photos:photos.filter(p=>p&&p.startsWith("data:"))
   };
@@ -451,7 +670,11 @@ function afterSend(kind,label,how){
   const sent=lsGet(SENT_KEY,[]);
   sent.unshift({kind,label,how,at:new Date().toLocaleString("ar-SA")});
   lsSet(SENT_KEY,sent.slice(0,60));
-  if(kind==="report"){FIELDS.forEach(f=>{if(f!=="f-dom")$(f).value="";});["f-dis","f-par","f-pn"].forEach(f=>$(f).value="0");sem="";ico="";photos=[null,null,null,null];document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));renderPhotos();localStorage.removeItem(DRAFT_KEY);}
+  if(kind==="report"){
+    // المسودة التي أُرسلت تُحذف من قائمة المسودات تلقائياً
+    if(editingDraftId)lsSet(DRAFTS_KEY,lsGet(DRAFTS_KEY,[]).filter(x=>x.id!==editingDraftId));
+    resetForm();renderDrafts();
+  }
   else{planRows=[];lsSet(PLAN_KEY,[]);renderPlan();}
   renderSent();
   toast(how==="ملف"?"📎 تم تجهيز الملف — أرسله لرائد النشاط":"✅ وصل التقرير لرائد النشاط");
@@ -484,6 +707,7 @@ function renderMe(){
     <div class="fg"><label>المدرسة</label><div>${esc(CFG.sc||"—")}</div></div>`;
   const m=mode();
   document.querySelectorAll("[data-mode]").forEach(c=>c.classList.toggle("on",c.dataset.mode===m));
+  const sw=$("sw-autosave");if(sw)sw.checked=autosaveOn();
   updModeHint();
 }
 function pickMode(el){
