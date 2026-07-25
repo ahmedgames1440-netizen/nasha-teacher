@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a6b3c">
+<title>تقارير النشاط — تطبيق المعلم</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{--g:#1a6b3c;--gl:#2a8f52;--gp:#e8f5ee;--go:#c9a227;--tx:#1a2e1f;--mu:#5a7a64;--br:#c8ddd0;--bg:#f4f9f6;--red:#dc3545;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.7;font-size:15px;padding-bottom:env(safe-area-inset-bottom);}
+input,select,textarea,button{font-family:inherit;font-size:16px;}
+
+/* ── شاشة الربط ── */
+#pair{position:fixed;inset:0;background:linear-gradient(160deg,#0d321f,#1a6b3c);display:flex;align-items:center;justify-content:center;padding:22px;z-index:9999;}
+.pair-box{background:#fff;border-radius:20px;padding:28px 22px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.35);}
+.pair-box h1{font-size:20px;color:var(--g);margin-bottom:6px;text-align:center;}
+.pair-box p{font-size:13.5px;color:var(--mu);text-align:center;margin-bottom:18px;}
+.pair-box textarea{width:100%;min-height:110px;border:2px solid var(--br);border-radius:12px;padding:12px;font-size:13px;direction:ltr;text-align:left;resize:vertical;}
+#pair-err{color:var(--red);font-size:13px;margin-top:10px;text-align:center;min-height:20px;}
+
+/* ── الهيكل ── */
+header{background:linear-gradient(90deg,#0d321f,#1a6b3c);color:#fff;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));position:sticky;top:0;z-index:100;box-shadow:0 3px 12px rgba(0,0,0,.18);}
+header h1{font-size:16.5px;font-weight:800;}
+header .sub{font-size:12px;opacity:.85;margin-top:2px;}
+main{padding:14px 14px 92px;max-width:640px;margin:0 auto;}
+.view{display:none;}
+.view.active{display:block;animation:fade .18s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── البطاقات والحقول ── */
+.card{background:#fff;border:1px solid var(--br);border-radius:14px;margin-bottom:13px;overflow:hidden;box-shadow:0 3px 10px rgba(16,88,52,.05);}
+.card-h{background:var(--gp);padding:11px 14px;font-weight:800;font-size:14px;color:var(--g);border-bottom:1px solid var(--br);}
+.card-b{padding:14px;}
+.fg{margin-bottom:13px;}
+.fg:last-child{margin-bottom:0;}
+.fg label{display:block;font-size:13px;font-weight:700;color:var(--g);margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{width:100%;border:1.5px solid var(--br);border-radius:10px;padding:11px 12px;background:#fff;color:var(--tx);}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--gl);box-shadow:0 0 0 3px rgba(42,143,82,.13);}
+.fg textarea{min-height:92px;resize:vertical;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.hint{font-size:11.5px;color:var(--mu);margin-top:4px;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{border:1.5px solid var(--br);border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer;background:#fff;transition:.15s;}
+.chip.on{background:var(--g);color:#fff;border-color:var(--g);font-weight:700;}
+
+/* ── الأزرار ── */
+.btn{display:block;width:100%;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:15px;cursor:pointer;text-align:center;}
+.btn-p{background:linear-gradient(90deg,var(--g),var(--gl));color:#fff;}
+.btn-o{background:#fff;border:1.5px solid var(--g);color:var(--g);}
+.btn-d{background:#fff;border:1.5px solid var(--red);color:var(--red);}
+.btn:disabled{opacity:.55;}
+.btn+.btn{margin-top:9px;}
+.btn-sm{padding:9px;font-size:13px;border-radius:9px;width:auto;}
+
+/* ── الصور ── */
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.ph{position:relative;border:2px dashed var(--br);border-radius:11px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fafdfb;cursor:pointer;}
+.ph img{width:100%;height:100%;object-fit:cover;}
+.ph span{font-size:12.5px;color:var(--mu);text-align:center;padding:6px;}
+.ph .del{position:absolute;top:5px;left:5px;background:rgba(220,53,69,.94);color:#fff;border:none;border-radius:50%;width:27px;height:27px;font-size:15px;cursor:pointer;line-height:1;}
+
+/* ── الشريط السفلي ── */
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--br);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -3px 14px rgba(0,0,0,.07);}
+nav button{flex:1;background:none;border:none;padding:9px 3px 11px;color:var(--mu);font-size:11px;font-weight:700;cursor:pointer;}
+nav button .ic{display:block;font-size:20px;margin-bottom:2px;}
+nav button.on{color:var(--g);}
+
+/* ── متفرقات ── */
+.item{border:1px solid var(--br);border-radius:11px;padding:12px;margin-bottom:9px;background:#fff;}
+.item .t{font-weight:800;font-size:14px;color:var(--g);}
+.item .m{font-size:12px;color:var(--mu);margin-top:3px;}
+.badge{display:inline-block;border-radius:14px;padding:2px 10px;font-size:11px;font-weight:800;}
+.b-ok{background:#d4edda;color:#155724;}
+.b-wait{background:#fff3cd;color:#856404;}
+.empty{text-align:center;color:var(--mu);padding:36px 14px;font-size:13.5px;}
+.empty .ic{font-size:38px;display:block;margin-bottom:8px;opacity:.6;}
+#toast{position:fixed;bottom:86px;right:50%;transform:translateX(50%);background:#0d321f;color:#fff;padding:12px 22px;border-radius:26px;font-size:13.5px;font-weight:700;opacity:0;transition:.25s;z-index:9998;pointer-events:none;max-width:88%;text-align:center;}
+#toast.on{opacity:1;}
+.note{background:var(--gp);border-radius:10px;padding:11px;font-size:12.5px;line-height:1.8;color:var(--tx);}
+.warn{background:#fff3cd;border-radius:10px;padding:11px;font-size:12.5px;line-height:1.8;}
+</style>
+</head>
+<body>
+
+<!-- ════ شاشة الربط ════ -->
+<div id="pair">
+  <div class="pair-box">
+    <h1>📋 تقارير النشاط الطلابي</h1>
+    <p>تطبيق المعلم — الصق رمز الدعوة الذي أرسله لك رائد النشاط</p>
+    <textarea id="pair-code" placeholder="الصق رمز الدعوة هنا..." autocomplete="off" spellcheck="false"></textarea>
+    <div id="pair-err"></div>
+    <button class="btn btn-p" style="margin-top:12px;" onclick="doPair()">✅ ربط التطبيق</button>
+  </div>
+</div>
+
+<!-- ════ التطبيق ════ -->
+<div id="app" style="display:none;">
+<header>
+  <h1 id="hd-title">تقرير حصة النشاط</h1>
+  <div class="sub" id="hd-sub"></div>
+</header>
+
+<main>
+  <!-- ═══ تقرير ═══ -->
+  <div class="view active" id="v-report">
+    <div class="card">
+      <div class="card-h">📌 بيانات البرنامج</div>
+      <div class="card-b">
+        <div class="fg">
+          <label>مجال النشاط</label>
+          <select id="f-dom" onchange="onDomChange()"></select>
+        </div>
+        <div class="fg">
+          <label>البرنامج المقترح (اختياري)</label>
+          <select id="f-progpick" onchange="pickProg()"><option value="">— اختر من القائمة —</option></select>
+        </div>
+        <div class="fg">
+          <label>اسم البرنامج *</label>
+          <input id="f-prog" placeholder="اكتب اسم البرنامج المنفذ">
+        </div>
+        <div class="row2">
+          <div class="fg"><label>عدد الحصص</label><input id="f-sess" type="number" min="1" inputmode="numeric"></div>
+          <div class="fg"><label>الفصل الدراسي</label>
+            <div class="chips" style="margin-top:2px;">
+              <div class="chip" data-sem="الأول" onclick="pickSem(this)">الأول</div>
+              <div class="chip" data-sem="الثاني" onclick="pickSem(this)">الثاني</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">📅 وقت التنفيذ</div>
+      <div class="card-b">
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--g);margin-bottom:5px;">البداية</label>
+        <div class="row3" style="margin-bottom:12px;">
+          <input id="f-sday" placeholder="اليوم"><input id="f-sweek" placeholder="الأسبوع"><input id="f-sdate" type="date">
+        </div>
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--g);margin-bottom:5px;">النهاية</label>
+        <div class="row3">
+          <input id="f-eday" placeholder="اليوم"><input id="f-eweek" placeholder="الأسبوع"><input id="f-edate" type="date">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">👥 المشاركون</div>
+      <div class="card-b">
+        <div class="row2">
+          <div class="fg"><label>الصف / الشعبة</label><input id="f-cls" placeholder="مثال: الثاني/أ"></div>
+          <div class="fg"><label>عدد الطلاب</label><input id="f-stu" type="number" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>من ذوي الإعاقة</label><input id="f-dis" type="number" min="0" value="0" inputmode="numeric"></div>
+          <div class="fg"><label>أولياء الأمور</label><input id="f-par" type="number" min="0" value="0" inputmode="numeric"></div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>عدد الشراكات</label><input id="f-pn" type="number" min="0" value="0" inputmode="numeric"></div>
+          <div class="fg"><label>الجهات الشريكة</label><input id="f-pname" placeholder="اختياري"></div>
+        </div>
+        <div class="fg">
+          <label>أيقونة مدرستي</label>
+          <div class="chips">
+            <div class="chip" data-ico="بنك الإثراءات" onclick="pickIco(this)">بنك الإثراءات</div>
+            <div class="chip" data-ico="التطوير الذاتي" onclick="pickIco(this)">التطوير الذاتي</div>
+            <div class="chip" data-ico="قيمنا الغالية" onclick="pickIco(this)">قيمنا الغالية</div>
+            <div class="chip" data-ico="نادي القراءة" onclick="pickIco(this)">نادي القراءة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">📷 شواهد التنفيذ (حتى 4 صور)</div>
+      <div class="card-b">
+        <div class="photos" id="photos"></div>
+        <div class="hint">تُصغَّر الصور تلقائياً قبل الإرسال لتصل بسرعة وبدون استهلاك باقتك.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">📝 الملاحظات</div>
+      <div class="card-b">
+        <div class="fg"><textarea id="f-notes" placeholder="التحديات — المقترحات — أثر البرنامج على الطلاب..."></textarea></div>
+      </div>
+    </div>
+
+    <button class="btn btn-p" onclick="submitReport()">📤 إرسال التقرير لرائد النشاط</button>
+    <button class="btn btn-o" onclick="saveDraft(true)">💾 حفظ كمسودة</button>
+    <button class="btn btn-d" onclick="clearReport()">🗑️ تفريغ النموذج</button>
+  </div>
+
+  <!-- ═══ خطة المجال ═══ -->
+  <div class="view" id="v-plan">
+    <div class="card">
+      <div class="card-h">🗂️ خطة المجال</div>
+      <div class="card-b">
+        <div class="note" id="plan-note"></div>
+        <div class="fg" style="margin-top:12px;"><label>البرنامج</label><input id="p-prog" placeholder="اسم البرنامج المقترح"></div>
+        <div class="row2">
+          <div class="fg"><label>المشرف</label><input id="p-sup" placeholder="المسؤول عن التنفيذ"></div>
+          <div class="fg"><label>المدة</label><input id="p-dur" placeholder="مثال: يوم واحد"></div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>المكان</label><input id="p-place" placeholder="مثال: الصالة الداخلية"></div>
+          <div class="fg"><label>المستهدفون</label><input id="p-target" placeholder="مثال: جميع الطلاب"></div>
+        </div>
+        <button class="btn btn-o" onclick="addPlanRow()">➕ إضافة للخطة</button>
+      </div>
+    </div>
+    <div id="plan-list"></div>
+    <button class="btn btn-p" onclick="submitPlan()">📤 إرسال الخطة لرائد النشاط</button>
+  </div>
+
+  <!-- ═══ المرسل ═══ -->
+  <div class="view" id="v-sent"><div id="sent-list"></div></div>
+
+  <!-- ═══ حسابي ═══ -->
+  <div class="view" id="v-me">
+    <div class="card">
+      <div class="card-h">👤 بياناتي</div>
+      <div class="card-b" id="me-info"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">📶 طريقة الإرسال</div>
+      <div class="card-b">
+        <div class="chips">
+          <div class="chip" data-mode="server" onclick="pickMode(this)">☁️ إرسال مباشر</div>
+          <div class="chip" data-mode="file" onclick="pickMode(this)">📎 ملف واتساب</div>
+        </div>
+        <div class="hint" id="mode-hint" style="margin-top:9px;"></div>
+      </div>
+    </div>
+    <button class="btn btn-d" onclick="unpair()">🚪 فصل التطبيق عن المدرسة</button>
+  </div>
+</main>
+
+<nav>
+  <button class="on" data-v="report" onclick="showView('report',this)"><span class="ic">📝</span>تقرير</button>
+  <button data-v="plan" onclick="showView('plan',this)"><span class="ic">🗂️</span>خطة المجال</button>
+  <button data-v="sent" onclick="showView('sent',this)"><span class="ic">📤</span>المرسل</button>
+  <button data-v="me" onclick="showView('me',this)"><span class="ic">👤</span>حسابي</button>
+</nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════ البرامج المعتمدة لكل مجال ══════════ */
+const AIP={"المواطنة والحياة":["التطوع الطلابي","مهارات طموحة","قيمنا حياة"],"العلوم والتقنية":["تطبيقات STEM","الذكاء الاصطناعي","رواد فضاء المستقبل","مدن المستقبل","تحدي أنترنت الأشياء"],"الثقافة والفنون":["حدائق الفن","الفن السابع","الأزياء السعودية","الفنون المسرحية","حكايات مرئية"],"الرياضة والصحة":["مهارات الرياضات الجماعية","الدفاع عن النفس","الرياضات الذهنية","مهارات الأولمبياد الرياضي"],"النشاط الكشفي":["واحة الإبداع الكشفي","من هدي القرآن والسنة","بوصلة الاكتشاف","أغامر واكتشف","وطني في قلبي","صناع التغيير"],"الأيام والمناسبات":["اليوم الوطني","يوم التأسيس","يوم السعودية الخضراء","يوم العلم","يوم الصحة العالمي","اليوم العالمي للتعليم"],"الفترات اللاصفية":["القيم","الذكاء الاجتماعي","الذوق العام","الأمن السيبراني","الوعي المستنير"]};
+const DOMAINS=Object.keys(AIP);
+
+/* ══════════ الحالة ══════════ */
+const CFG_KEY="nt_cfg", DRAFT_KEY="nt_draft", SENT_KEY="nt_sent", PLAN_KEY="nt_plan", MODE_KEY="nt_mode";
+let CFG=null, photos=[null,null,null,null], planRows=[], sem="", ico="";
+
+/* ══════════ أدوات ══════════ */
+function $(id){return document.getElementById(id);}
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function toast(m,d=2600){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),d);}
+function b64e(s){return btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function b64d(s){const p=s.replace(/-/g,"+").replace(/_/g,"/");return new TextDecoder().decode(Uint8Array.from(atob(p),c=>c.charCodeAt(0)));}
+function lsGet(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* ══════════ الربط ══════════ */
+function doPair(){
+  let raw=($("pair-code").value||"").trim();
+  const err=$("pair-err");err.textContent="";
+  if(!raw){err.textContent="الصق رمز الدعوة أولاً";return;}
+  const m=raw.match(/[?&]k=([A-Za-z0-9\-_]+)/); if(m)raw=m[1];
+  raw=raw.replace(/\s+/g,"");
+  try{
+    const cfg=JSON.parse(b64d(raw));
+    if(!cfg.i||!cfg.t||!cfg.n){err.textContent="رمز الدعوة غير مكتمل، اطلب رمزاً جديداً";return;}
+    CFG=cfg; lsSet(CFG_KEY,cfg);
+    if(!localStorage.getItem(MODE_KEY))lsSet(MODE_KEY,cfg.s?"server":"file");
+    startApp();
+    toast("✅ تم ربط التطبيق بنجاح");
+  }catch(e){ err.textContent="رمز الدعوة غير صحيح، تأكد من نسخه كاملاً"; }
+}
+function unpair(){
+  if(!confirm("سيتم فصل التطبيق ومسح بياناتك المحلية. متابعة؟"))return;
+  [CFG_KEY,DRAFT_KEY,SENT_KEY,PLAN_KEY,MODE_KEY].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+/* ══════════ التشغيل ══════════ */
+function startApp(){
+  $("pair").style.display="none";
+  $("app").style.display="block";
+  $("hd-sub").textContent=`${CFG.n} — ${(CFG.d&&CFG.d[0])||"النشاط الطلابي"}${CFG.sc?" | "+CFG.sc:""}`;
+  const sel=$("f-dom");
+  const allowed=(CFG.d&&CFG.d.length)?CFG.d.filter(d=>DOMAINS.includes(d)):[];
+  const list=allowed.length?allowed:DOMAINS;
+  sel.innerHTML=list.map(d=>`<option>${esc(d)}</option>`).join("");
+  onDomChange();
+  $("plan-note").innerHTML=`تُرسل هذه الخطة لرائد النشاط كمقترح لمجال <b>${esc(list[0])}</b>، ويعتمدها في خطة المدرسة.`;
+  renderPhotos(); loadDraft(); planRows=lsGet(PLAN_KEY,[]); renderPlan(); renderSent(); renderMe();
+}
+function showView(v,btn){
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  $("v-"+v).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("on"));
+  if(btn)btn.classList.add("on");
+  $("hd-title").textContent={report:"تقرير حصة النشاط",plan:"خطة المجال",sent:"التقارير المرسلة",me:"حسابي"}[v];
+  if(v==="sent")renderSent();
+  window.scrollTo(0,0);
+}
+
+/* ══════════ نموذج التقرير ══════════ */
+function onDomChange(){
+  const d=$("f-dom").value;
+  $("f-progpick").innerHTML=`<option value="">— اختر من القائمة —</option>`+(AIP[d]||[]).map(p=>`<option>${esc(p)}</option>`).join("");
+}
+function pickProg(){const v=$("f-progpick").value;if(v)$("f-prog").value=v;}
+function pickSem(el){document.querySelectorAll("[data-sem]").forEach(c=>c.classList.remove("on"));el.classList.add("on");sem=el.dataset.sem;}
+function pickIco(el){const was=el.classList.contains("on");document.querySelectorAll("[data-ico]").forEach(c=>c.classList.remove("on"));if(was){ico="";}else{el.classList.add("on");ico=el.dataset.ico;}}
+
+/* ══════════ الصور ══════════ */
+function renderPhotos(){
+  $("photos").innerHTML=photos.map((p,i)=>p
+    ?`<div class="ph"><img src="${p}"><button class="del" onclick="delPhoto(${i})">✖</button></div>`
+    :`<div class="ph" onclick="pickPhoto(${i})"><span>📷<br>صورة ${i+1}</span></div>`).join("");
+}
+function pickPhoto(i){
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept="image/*";
+  inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)compress(f,d=>{photos[i]=d;renderPhotos();saveDraft();});};
+  inp.click();
+}
+function delPhoto(i){photos[i]=null;renderPhotos();saveDraft();}
+// تصغير الصورة: أطول ضلع 1000 بكسل، JPEG بجودة 0.75 — يوافق ما يقبله البرنامج المكتبي
+function compress(file,done){
+  const r=new FileReader();
+  r.onload=e=>{
+    const im=new Image();
+    im.onload=()=>{
+      const max=1000,sc=Math.min(1,max/Math.max(im.width,im.height));
+      const c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(im.width*sc));
+      c.height=Math.max(1,Math.round(im.height*sc));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      done(c.toDataURL("image/jpeg",0.75));
+    };
+    im.onerror=()=>toast("⚠️ تعذر قراءة الصورة");
+    im.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+/* ══════════ المسودة ══════════ */
+const FIELDS=["f-dom","f-prog","f-sess","f-sday","f-sweek","f-sdate","f-eday","f-eweek","f-edate","f-cls","f-stu","f-dis","f-par","f-pn","f-pname","f-notes"];
+function saveDraft(manual){
+  const d={sem,ico,photos};FIELDS.forEach(f=>d[f]=$(f).value);
+  lsSet(DRAFT_KEY,d);
+  if(manual)toast("💾 تم حفظ المسودة");
+}
+function loadDraft(){
+  const d=lsGet(DRAFT_KEY,null);if(!d)return;
+  FIELDS.forEach(f=>{if(d[f]!=null&&$(f))$(f).value=d[f];});
+  onDomChange();if(d["f-dom"])$("f-dom").value=d["f-dom"];
+  sem=d.sem||"";ico=d.ico||"";
+  if(sem){const el=document.querySelector(`[data-sem="${sem}"]`);if(el)el.classList.add("on");}
+  if(ico){const el=document.querySelector(`[data-ico="${ico}"]`);if(el)el.classList.add("on");}
+  photos=Array.isArray(d.photos)&&d.photos.length===4?d.photos:[null,null,null,null];
+  renderPhotos();
+}
+function clearReport(){
+  if(!confirm("تفريغ جميع الحقول؟"))return;
+  FIELDS.forEach(f=>{if(f!=="f-dom")$(f).value="";});
+  ["f-dis","f-par","f-pn"].forEach(f=>$(f).value="0");
+  sem="";ico="";photos=[null,null,null,null];
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
+  renderPhotos();localStorage.removeItem(DRAFT_KEY);toast("🗑️ تم تفريغ النموذج");
+}
+document.addEventListener("input",e=>{if(e.target.id&&e.target.id.startsWith("f-"))saveDraft();});
+
+/* ══════════ بناء التقرير بنفس بنية البرنامج المكتبي ══════════ */
+function buildReport(){
+  return {
+    dom:$("f-dom").value, prog:$("f-prog").value.trim(), sess:$("f-sess").value, sem:sem,
+    startDay:$("f-sday").value, startWeek:$("f-sweek").value, startDate:$("f-sdate").value,
+    endDay:$("f-eday").value, endWeek:$("f-eweek").value, endDate:$("f-edate").value,
+    cls:$("f-cls").value, stu:$("f-stu").value, disabled:$("f-dis").value,
+    parents:$("f-par").value, partners:$("f-pn").value, partnerName:$("f-pname").value,
+    madrasati:ico, notes:$("f-notes").value, tch:CFG.n,
+    date:new Date().toLocaleDateString("ar-SA"),
+    photos:photos.filter(p=>p&&p.startsWith("data:"))
+  };
+}
+async function submitReport(){
+  const r=buildReport();
+  if(!r.prog){toast("⚠️ اكتب اسم البرنامج أولاً");return;}
+  await send("report",r,r.prog);
+}
+
+/* ══════════ خطة المجال ══════════ */
+function addPlanRow(){
+  const prog=$("p-prog").value.trim();
+  if(!prog){toast("⚠️ اكتب اسم البرنامج");return;}
+  planRows.push({prog,field:$("f-dom").value,sup:$("p-sup").value.trim(),dur:$("p-dur").value.trim(),place:$("p-place").value.trim(),target:$("p-target").value.trim()});
+  ["p-prog","p-sup","p-dur","p-place","p-target"].forEach(i=>$(i).value="");
+  lsSet(PLAN_KEY,planRows);renderPlan();toast("✅ أُضيف للخطة");
+}
+function delPlanRow(i){planRows.splice(i,1);lsSet(PLAN_KEY,planRows);renderPlan();}
+function renderPlan(){
+  $("plan-list").innerHTML=planRows.length?planRows.map((r,i)=>
+    `<div class="item"><div style="display:flex;justify-content:space-between;gap:8px;">
+      <div><div class="t">${i+1}. ${esc(r.prog)}</div>
+      <div class="m">${esc(r.sup||"—")} · ${esc(r.dur||"—")} · ${esc(r.place||"—")} · ${esc(r.target||"—")}</div></div>
+      <button class="btn btn-d btn-sm" onclick="delPlanRow(${i})">🗑️</button></div></div>`).join("")
+    :`<div class="empty"><span class="ic">🗂️</span>لم تُضف أي برنامج للخطة بعد</div>`;
+}
+async function submitPlan(){
+  if(!planRows.length){toast("⚠️ أضف برنامجاً واحداً على الأقل");return;}
+  await send("plan",{domain:$("f-dom").value,rows:planRows},`خطة ${$("f-dom").value}`);
+}
+
+/* ══════════ الإرسال ══════════ */
+function mode(){return lsGet(MODE_KEY,CFG&&CFG.s?"server":"file");}
+async function send(kind,payload,label){
+  const body={inboxId:CFG.i,submitToken:CFG.t,kind,teacher:CFG.n,domain:$("f-dom").value,payload};
+  if(mode()==="server"&&CFG.s){
+    toast("⏳ جارٍ الإرسال...");
+    try{
+      const res=await fetch(CFG.s.replace(/\/+$/,"")+"/inbox/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const data=await res.json();
+      if(data&&data.ok){ afterSend(kind,label,"مُرسل"); return; }
+      toast("⚠️ "+((data&&data.error)||"تعذر الإرسال"));
+      if(confirm("تعذر الإرسال المباشر. هل تريد حفظه كملف لإرساله واتساب؟"))exportFile(body,label);
+    }catch(e){
+      toast("⚠️ لا يوجد اتصال بالإنترنت");
+      if(confirm("لا يوجد اتصال. هل تريد حفظه كملف لإرساله واتساب؟"))exportFile(body,label);
+    }
+  }else{
+    exportFile(body,label);
+    afterSend(kind,label,"ملف");
+  }
+}
+function afterSend(kind,label,how){
+  const sent=lsGet(SENT_KEY,[]);
+  sent.unshift({kind,label,how,at:new Date().toLocaleString("ar-SA")});
+  lsSet(SENT_KEY,sent.slice(0,60));
+  if(kind==="report"){FIELDS.forEach(f=>{if(f!=="f-dom")$(f).value="";});["f-dis","f-par","f-pn"].forEach(f=>$(f).value="0");sem="";ico="";photos=[null,null,null,null];document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));renderPhotos();localStorage.removeItem(DRAFT_KEY);}
+  else{planRows=[];lsSet(PLAN_KEY,[]);renderPlan();}
+  renderSent();
+  toast(how==="ملف"?"📎 تم تجهيز الملف — أرسله لرائد النشاط":"✅ وصل التقرير لرائد النشاط");
+}
+function exportFile(body,label){
+  const blob=new Blob([JSON.stringify({nashaTeacherPacket:1,...body},null,1)],{type:"application/json"});
+  const name=`نشاط_${(CFG.n||"معلم").replace(/\s+/g,"_")}_${Date.now()}.json`;
+  const file=new File([blob],name,{type:"application/json"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:label||"تقرير النشاط"}).catch(()=>downloadBlob(blob,name));
+  }else downloadBlob(blob,name);
+}
+function downloadBlob(blob,name){
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+
+/* ══════════ المرسل وحسابي ══════════ */
+function renderSent(){
+  const s=lsGet(SENT_KEY,[]);
+  $("sent-list").innerHTML=s.length?s.map(x=>
+    `<div class="item"><div class="t">${x.kind==="plan"?"🗂️":"📝"} ${esc(x.label)}</div>
+     <div class="m">${esc(x.at)} · <span class="badge ${x.how==="ملف"?"b-wait":"b-ok"}">${esc(x.how)}</span></div></div>`).join("")
+    :`<div class="empty"><span class="ic">📤</span>لم ترسل أي تقرير بعد</div>`;
+}
+function renderMe(){
+  $("me-info").innerHTML=`
+    <div class="fg"><label>الاسم</label><div>${esc(CFG.n)}</div></div>
+    <div class="fg"><label>المجالات المسؤول عنها</label><div>${esc((CFG.d||[]).join("، ")||"غير محدد")}</div></div>
+    <div class="fg"><label>المدرسة</label><div>${esc(CFG.sc||"—")}</div></div>`;
+  const m=mode();
+  document.querySelectorAll("[data-mode]").forEach(c=>c.classList.toggle("on",c.dataset.mode===m));
+  updModeHint();
+}
+function pickMode(el){
+  if(el.dataset.mode==="server"&&!(CFG&&CFG.s)){toast("⚠️ هذه المدرسة تستخدم الإرسال بالملف فقط");return;}
+  lsSet(MODE_KEY,el.dataset.mode);
+  document.querySelectorAll("[data-mode]").forEach(c=>c.classList.remove("on"));
+  el.classList.add("on");updModeHint();
+}
+function updModeHint(){
+  $("mode-hint").textContent=mode()==="server"
+    ?"يصل التقرير مباشرة لبرنامج رائد النشاط عند ضغط إرسال (يتطلب إنترنت)."
+    :"يُحفظ التقرير كملف صغير ترسله لرائد النشاط عبر واتساب، ويستورده بضغطة واحدة.";
+}
+
+/* ══════════ الإقلاع ══════════ */
+(function(){
+  const url=new URL(location.href);
+  const k=url.searchParams.get("k");
+  if(k){$("pair-code").value=k;doPair();if(CFG)history.replaceState(null,"",url.pathname);}
+  if(!CFG){
+    const saved=lsGet(CFG_KEY,null);
+    if(saved){CFG=saved;startApp();}
+  }
+})();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
