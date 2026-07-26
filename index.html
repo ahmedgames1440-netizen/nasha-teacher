@@ -118,8 +118,8 @@ nav button.on{color:var(--g);}
 <div id="pair">
   <div class="pair-box">
     <h1>📋 تقارير النشاط الطلابي</h1>
-    <p>تطبيق المعلم — الصق رمز الدعوة الذي أرسله لك رائد النشاط</p>
-    <textarea id="pair-code" placeholder="الصق رمز الدعوة هنا..." autocomplete="off" spellcheck="false"></textarea>
+    <p>تطبيق المعلم — أدخل رمز الدعوة الذي أرسله لك رائد النشاط</p>
+    <textarea id="pair-code" placeholder="مثال: A7K2M9Q — أو الصق رابط الدعوة كاملاً" autocomplete="off" spellcheck="false" autocapitalize="characters"></textarea>
     <div id="pair-err"></div>
     <button class="btn btn-p" style="margin-top:12px;" onclick="doPair()">✅ ربط التطبيق</button>
   </div>
@@ -346,15 +346,26 @@ function lsGet(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
 /* ══════════ الربط ══════════ */
-function doPair(){
+const DEFAULT_API="https://nasha-tullab-license.ahmedgames1440.workers.dev";
+async function doPair(){
   let raw=($("pair-code").value||"").trim();
   const err=$("pair-err");err.textContent="";
   if(!raw){err.textContent="الصق رمز الدعوة أولاً";return;}
   const m=raw.match(/[?&]k=([A-Za-z0-9\-_]+)/); if(m)raw=m[1];
   raw=raw.replace(/\s+/g,"");
   try{
-    const cfg=JSON.parse(b64d(raw));
-    if(!cfg.i||!cfg.t||!cfg.n){err.textContent="رمز الدعوة غير مكتمل، اطلب رمزاً جديداً";return;}
+    let cfg;
+    if(/^[A-Za-z0-9]{7}$/.test(raw)){
+      // رمز مختصر: نجلب الإعدادات من الخادم
+      err.textContent="جارٍ التحقق من الرمز...";
+      const res=await fetch(DEFAULT_API+"/invite/get?c="+encodeURIComponent(raw.toUpperCase()));
+      const d=await res.json();
+      if(!d||!d.ok){err.textContent="⚠️ "+((d&&d.error)||"رمز الدعوة غير صحيح");return;}
+      cfg=d.payload;err.textContent="";
+    }else{
+      cfg=JSON.parse(b64d(raw));
+    }
+    if(!cfg||!cfg.i||!cfg.t||!cfg.n){err.textContent="رمز الدعوة غير مكتمل، اطلب رمزاً جديداً";return;}
     CFG=cfg; lsSet(CFG_KEY,cfg);
     // الربط بدعوة جديدة يعيد ضبط طريقة الإرسال حسب إعدادات المدرسة الحالية،
     // وإلا بقي المعلم على "ملف" حتى بعد أن يفعّل رائد النشاط الاستقبال المباشر.
@@ -723,14 +734,13 @@ function updModeHint(){
 }
 
 /* ══════════ الإقلاع ══════════ */
-(function(){
+(async function(){
   const url=new URL(location.href);
   const k=url.searchParams.get("k");
-  if(k){$("pair-code").value=k;doPair();if(CFG)history.replaceState(null,"",url.pathname);}
-  if(!CFG){
-    const saved=lsGet(CFG_KEY,null);
-    if(saved){CFG=saved;startApp();}
-  }
+  const saved=lsGet(CFG_KEY,null);
+  if(saved){CFG=saved;startApp();}
+  // الرمز المختصر يحتاج طلباً للخادم، لذا ننتظره قبل تنظيف العنوان
+  if(k){$("pair-code").value=k;await doPair();if(CFG)history.replaceState(null,"",url.pathname);}
 })();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
