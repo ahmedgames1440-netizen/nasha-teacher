@@ -262,20 +262,26 @@ nav button.on{color:var(--g);}
       <div class="card-h">🗂️ خطة المجال</div>
       <div class="card-b">
         <div class="note" id="plan-note"></div>
-        <div class="fg" style="margin-top:12px;"><label>البرنامج</label><input id="p-prog" placeholder="اسم البرنامج المقترح"></div>
+        <button class="btn btn-p" style="margin-top:12px;" onclick="generateFullPlan()">⚡ توليد خطة المجال كاملة من الدليل</button>
+        <div class="hint" style="margin:7px 0 13px;">تُضاف كل برامج مجالك المقررة لمرحلة مدرستك بحصصها وخاناتها معبّأة — ثم تعدّل ما تشاء.</div>
+        <div class="fg"><label>البرنامج</label><select id="p-progpick" onchange="onPlanProgPick()"></select></div>
+        <div class="fg" id="p-prog-wrap" style="display:none;"><label>اسم البرنامج</label><input id="p-prog" placeholder="اكتب اسم البرنامج"></div>
         <div class="row2">
           <div class="fg"><label>المشرف</label><input id="p-sup" placeholder="المسؤول عن التنفيذ"></div>
-          <div class="fg"><label>المدة</label><input id="p-dur" placeholder="مثال: يوم واحد"></div>
+          <div class="fg"><label>عدد الحصص</label><input id="p-sess" type="number" min="0" placeholder="حسب الدليل"></div>
         </div>
         <div class="row2">
+          <div class="fg"><label>المدة</label><input id="p-dur" placeholder="مثال: 4 حصص — نحو أسبوعين"></div>
           <div class="fg"><label>المكان</label><input id="p-place" placeholder="مثال: الصالة الداخلية"></div>
-          <div class="fg"><label>المستهدفون</label><input id="p-target" placeholder="مثال: جميع الطلاب"></div>
         </div>
-        <button class="btn btn-o" onclick="addPlanRow()">➕ إضافة للخطة</button>
+        <div class="fg"><label>المستهدفون</label><input id="p-target" placeholder="مثال: جميع الطلاب"></div>
+        <button class="btn btn-o" onclick="autoFillPlanRow()">✨ تعبئة الخانات تلقائياً</button>
+        <button class="btn btn-o" style="margin-top:8px;" onclick="addPlanRow()">➕ إضافة للخطة</button>
       </div>
     </div>
     <div id="plan-list"></div>
     <button class="btn btn-p" onclick="submitPlan()">📤 إرسال الخطة لرائد النشاط</button>
+    <button class="btn btn-d" style="margin-top:8px;" onclick="clearPlan()">🗑️ تفريغ الخطة</button>
   </div>
 
   <!-- ═══ المرسل ═══ -->
@@ -286,6 +292,13 @@ nav button.on{color:var(--g);}
     <div class="card">
       <div class="card-h">👤 بياناتي</div>
       <div class="card-b" id="me-info"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">🏫 المرحلة الدراسية</div>
+      <div class="card-b">
+        <div class="chips" id="stage-chips"></div>
+        <div class="hint" style="margin-top:9px;">تحدد المرحلة البرامج المقررة وعدد حصص كل برنامج وفق دليل الخطط الدراسية 1448هـ.</div>
+      </div>
     </div>
     <div class="card">
       <div class="card-h">📶 طريقة الإرسال</div>
@@ -328,10 +341,193 @@ nav button.on{color:var(--g);}
 
 <script>
 /* ══════════ البرامج المعتمدة لكل مجال ══════════ */
-const AIP={"المواطنة والحياة":["التطوع الطلابي","مهارات طموحة","قيمنا حياة"],"العلوم والتقنية":["تطبيقات STEM","الذكاء الاصطناعي","رواد فضاء المستقبل","مدن المستقبل","تحدي أنترنت الأشياء"],"الثقافة والفنون":["حدائق الفن","الفن السابع","الأزياء السعودية","الفنون المسرحية","حكايات مرئية"],"الرياضة والصحة":["مهارات الرياضات الجماعية","الدفاع عن النفس","الرياضات الذهنية","مهارات الأولمبياد الرياضي"],"النشاط الكشفي":["واحة الإبداع الكشفي","من هدي القرآن والسنة","بوصلة الاكتشاف","أغامر واكتشف","وطني في قلبي","صناع التغيير"],"الأيام والمناسبات":["اليوم الوطني","يوم التأسيس","يوم السعودية الخضراء","يوم العلم","يوم الصحة العالمي","اليوم العالمي للتعليم"],"الفترات اللاصفية":["القيم","الذكاء الاجتماعي","الذوق العام","الأمن السيبراني","الوعي المستنير"]};
-const DOMAINS=Object.keys(AIP);
+/* بنك برامج المجالات — دليل الخطط الدراسية، الإصدار السادس 1448هـ.
+   s = عدد الحصص لكل مرحلة بالترتيب: [الأولية، العليا، المتوسطة، الثانوية]. صفر = البرنامج غير مقرر لتلك المرحلة. */
+const PROGRAMS_1448={
+ "المواطنة والحياة":[
+  {p:"التطوع الطلابي",s:[4,4,5,6]},
+  {p:"مهارات طموحة",s:[6,4,3,2]},
+  {p:"نموذج الأمم المتحدة",s:[6,8,10,10]},
+  {p:"قيمنا حياة",s:[0,12,12,12]},
+  {p:"إرث وطموح",s:[4,4,6,8]},
+  {p:"ريادة الأعمال",s:[4,4,6,8]},
+  {p:"السيرة النبوية",s:[4,4,8,9]}
+ ],
+ "الثقافة والفنون":[
+  {p:"الفن السابع (السينما)",s:[8,8,8,8]},
+  {p:"الفنون البصرية والتشكيلية",s:[6,6,6,6]},
+  {p:"الأزياء السعودية",s:[4,4,6,6]},
+  {p:"الثقافة الإعلامية",s:[4,4,6,8]},
+  {p:"الفن التراثي المعاصر",s:[5,5,5,5]},
+  {p:"الفنون المسرحية",s:[8,8,8,8]},
+  {p:"الفنون الصوتية أو الفنون الموسيقية",s:[8,8,8,8]},
+  {p:"حكايات مرئية (أنمي استديو)",s:[6,6,11,11]},
+  {p:"مهارات اللغة والتواصل الثقافي",s:[5,4,6,8]},
+  {p:"الكتابة الإبداعية والأدبية",s:[4,5,8,10]},
+  {p:"الحرف والمهن",s:[4,4,8,8]},
+  {p:"الخط العربي",s:[4,4,6,6]}
+ ],
+ "الرياضة والصحة":[
+  {p:"منافسة المهارات الرياضية الجماعية",s:[6,8,8,8]},
+  {p:"منافسة المهارات الرياضية الفردية",s:[8,8,8,6]},
+  {p:"منافسة مهارات رياضات الدفاع عن النفس",s:[8,8,8,6]},
+  {p:"الرياضة والترفيه الإلكتروني",s:[8,8,6,8]},
+  {p:"الرياضات الذهنية",s:[6,8,8,8]},
+  {p:"الأولمبياد الرياضي",s:[6,8,8,8]},
+  {p:"الإسعافات الأولية",s:[3,4,4,4]},
+  {p:"اللياقة والصحة البدنية",s:[2,2,2,2]},
+  {p:"مهارات التحكيم الرياضي (أنا حكم)",s:[3,3,8,8]},
+  {p:"صحتي في بيئتي",s:[3,3,8,8]}
+ ],
+ "العلوم والتقنية":[
+  {p:"برنامج تطبيقات STEM",s:[3,5,7,7]},
+  {p:"التصميم والابتكار التقني",s:[2,5,7,7]},
+  {p:"الفضاء والاستكشاف العلمي",s:[3,5,7,9]},
+  {p:"الاستدامة وجودة الحياة",s:[3,4,7,9]},
+  {p:"الذكاء الاصطناعي",s:[10,10,10,10]},
+  {p:"إنترنت الأشياء",s:[3,4,7,9]},
+  {p:"الأمن السيبراني",s:[4,4,6,8]},
+  {p:"البحث العلمي",s:[4,4,6,8]},
+  {p:"حوكمة البيانات",s:[3,3,5,7]}
+ ],
+ "النشاط الكشفي":[
+  {p:"خيمتي الجميلة",s:[3,0,0,0]},
+  {p:"براعم البيئة والمجتمع",s:[2,0,0,0]},
+  {p:"بصمتي الكشفية",s:[3,0,0,0]},
+  {p:"براعم النور",s:[2,0,0,0]},
+  {p:"بوصلة الاكتشاف",s:[3,0,0,0]},
+  {p:"عاداتي الصحية الكشفية",s:[2,0,0,0]},
+  {p:"مهاراتي وكشفيتي",s:[2,0,0,0]},
+  {p:"خشبة وحبل",s:[0,12,0,0]},
+  {p:"أشارك مجتمعي وأزرع شجرة",s:[0,3,0,0]},
+  {p:"وطني في قلبي",s:[0,3,0,0]},
+  {p:"كنوز الصغار",s:[0,2,0,0]},
+  {p:"خيمة التجارب المسلية",s:[0,6,0,0]},
+  {p:"طبقي الكشفي",s:[0,3,0,0]},
+  {p:"صافرة واصطفاف",s:[0,2,0,0]},
+  {p:"الملاحة على اليابس *",s:[0,0,3,0]},
+  {p:"مجتمعي وبيئتي مسؤوليتي",s:[0,0,6,0]},
+  {p:"صناع التغيير",s:[0,0,3,0]},
+  {p:"مخيمي التقني",s:[0,0,10,0]},
+  {p:"خطواتي الكشفية الصحية",s:[0,0,4,0]},
+  {p:"مهاراتي الكشفية من الاستعداد إلى الإنجاز",s:[0,0,3,0]},
+  {p:"أغامر وأكتشف *",s:[0,0,0,5]},
+  {p:"سفير البيئة والمجتمع",s:[0,0,0,5]},
+  {p:"سواعد الكشفية",s:[0,0,0,6]},
+  {p:"واحة الإبداع الكشفي *",s:[0,0,0,4]},
+  {p:"مهرجان الأفلام الكشفية الصحية",s:[0,0,0,8]},
+  {p:"أفقي الكشفي الواسع",s:[0,0,0,4]}
+ ],
+ "الأيام والمناسبات":[
+  {p:"اليوم الوطني",s:[4,4,4,4],fullDay:true},
+  {p:"يوم التأسيس",s:[4,4,4,4],fullDay:true},
+  {p:"يوم السعودية الخضراء",s:[3,3,2,2]},
+  {p:"يوم العلم",s:[3,3,2,2]},
+  {p:"يوم الصحة العالمي",s:[2,2,2,2]},
+  {p:"اليوم العالمي للتعليم",s:[2,2,2,2]},
+  {p:"يوم اللغة العربية العالمي",s:[2,2,2,2]},
+  {p:"اليوم العالمي لذوي الإعاقة",s:[2,2,1,1]},
+  {p:"يوم التسامح العالمي",s:[2,2,1,1]},
+  {p:"اليوم العالمي للطفل",s:[2,2,0,0]},
+  {p:"يوم المعلم العالمي",s:[2,2,2,2]},
+  {p:"اليوم الدولي للأسرة",s:[2,2,2,2]}
+ ],
+ "الفترات اللاصفية":[
+  {p:"رحلة نجاح",s:[11,11,11,10]},
+  {p:"صحتي مسؤوليتي",s:[11,11,11,10]},
+  {p:"سفراء الاستدامة والوعي البيئي",s:[11,11,11,10]},
+  {p:"مهارات المستقبل",s:[11,11,11,10]},
+  {p:"كن واعيًا",s:[11,11,11,10]},
+  {p:"النادي الثقافي",s:[11,11,11,10]},
+  {p:"الإرث والأمجاد",s:[11,11,11,10]},
+  {p:"صانع الأثر",s:[6,6,6,5]},
+  {p:"القيم",s:[20,20,20,20]},
+  {p:"النسك",s:[4,4,4,3]}
+ ]
+};
+const STAGES=["الابتدائية — الصفوف الأولية","الابتدائية — الصفوف العليا","المتوسطة","الثانوية"];
+const DOMAINS=Object.keys(PROGRAMS_1448);
+
+function stageIdx(){
+  const v=lsGet(STAGE_KEY,null);
+  const n=(v===null||v==="")?null:+v;
+  if(n!==null&&n>=0&&n<=3)return n;
+  const fromCfg=(CFG&&CFG.lv!=null)?+CFG.lv:null;   // المرحلة القادمة من رمز الدعوة
+  return (fromCfg!==null&&fromCfg>=0&&fromCfg<=3)?fromCfg:3;
+}
+function setStage(i){lsSet(STAGE_KEY,+i);onDomChange();renderPlanPicker();renderMe();toast("✅ المرحلة: "+STAGES[+i]);}
+function progsFor(dom,si){
+  si=(si==null)?stageIdx():si;
+  return (PROGRAMS_1448[dom]||[]).filter(x=>x.s[si]>0);
+}
+function sessFor(dom,prog,si){
+  si=(si==null)?stageIdx():si;
+  const hit=(PROGRAMS_1448[dom]||[]).find(x=>x.p===prog);
+  return hit?hit.s[si]:0;
+}
+function sessLabel(n){
+  if(!n)return "—";
+  if(n===1)return "حصة واحدة";
+  if(n===2)return "حصتان";
+  return n+(n<=10?" حصص":" حصة");
+}
+
+/* تعبئة خانات خطة المجال تلقائياً حسب المجال والبرنامج وعدد حصصه */
+const PLAN_SUP={
+ "المواطنة والحياة":"مشرف المواطنة والحياة",
+ "الثقافة والفنون":"مشرف النشاط الثقافي",
+ "الرياضة والصحة":"مشرف النشاط الرياضي",
+ "العلوم والتقنية":"مشرف النشاط العلمي",
+ "النشاط الكشفي":"قائد النشاط الكشفي",
+ "الأيام والمناسبات":"رائد النشاط",
+ "الفترات اللاصفية":"رائد الفصل"
+};
+const PLAN_PLACE={
+ "المواطنة والحياة":"الصالة الداخلية",
+ "الثقافة والفنون":"قاعة الفنون / المسرح المدرسي",
+ "الرياضة والصحة":"الملعب / الصالة الرياضية",
+ "العلوم والتقنية":"معمل الحاسب / المختبر",
+ "النشاط الكشفي":"ساحة المدرسة",
+ "الأيام والمناسبات":"الصالة الداخلية",
+ "الفترات اللاصفية":"الفصول الدراسية"
+};
+// استثناءات بحسب اسم البرنامج — تُطابَق كجزء من الاسم
+const PLACE_HINTS=[
+ [/سينما|السابع|مرئي|أنمي|إعلام/,"قاعة العرض / مصادر التعلم"],
+ [/مسرح/,"المسرح المدرسي"],
+ [/بصري|تشكيلي|تراث|أزياء/,"قاعة الفنون"],
+ [/قرآن|السنة|النبوية|صلاة|مسجد/,"مصلى المدرسة"],
+ [/مخيم|رحل|خلوي|كشفي|استكشاف|أغامر|بوصلة/,"ساحة المدرسة / موقع المخيم"],
+ [/برمج|حاسب|ذكاء|روبوت|سيبراني|أنترنت|إنترنت|STEM/i,"معمل الحاسب"],
+ [/مختبر|علوم|فضاء|بحث/,"المختبر"],
+ [/مكتب|قراءة|كتاب|لغة/,"مصادر التعلم"],
+ [/رياض|كرة|بدني|أولمبياد|دفاع/,"الملعب / الصالة الرياضية"]
+];
+function planPlaceFor(dom,prog){
+  for(const [re,val] of PLACE_HINTS)if(re.test(prog||""))return val;
+  return PLAN_PLACE[dom]||"مرافق المدرسة";
+}
+function planTargetFor(dom){
+  if(dom==="الأيام والمناسبات")return "جميع طلاب المدرسة";
+  if(dom==="الفترات اللاصفية")return "جميع طلاب الفصل";
+  return "الطلاب المشاركون في المجال";
+}
+function planDurFor(n){
+  if(!n)return "";
+  const s=sessLabel(n);
+  if(n<=2)return s;
+  if(n<=4)return s+" — نحو أسبوعين";
+  if(n<=8)return s+" — نحو شهر";
+  return s+" — على مدى الفصل";
+}
+function planRowFor(dom,prog){
+  const n=sessFor(dom,prog);
+  return {prog,field:dom,sup:PLAN_SUP[dom]||"رائد النشاط",dur:planDurFor(n),
+          place:planPlaceFor(dom,prog),target:planTargetFor(dom),sess:n};
+}
 
 /* ══════════ الحالة ══════════ */
+const STAGE_KEY="nt_stage";
 const CFG_KEY="nt_cfg", DRAFT_KEY="nt_draft", SENT_KEY="nt_sent", PLAN_KEY="nt_plan", MODE_KEY="nt_mode",
       DRAFTS_KEY="nt_drafts", AUTOSAVE_KEY="nt_autosave";
 let CFG=null, photos=[null,null,null,null], planRows=[], sem="", ico="", signature="", editingDraftId=null;
@@ -393,7 +589,7 @@ function startApp(){
   $("plan-note").innerHTML=`تُرسل هذه الخطة لرائد النشاط كمقترح لمجال <b>${esc(list[0])}</b>، ويعتمدها في خطة المدرسة.`;
   $("f-tch").value=CFG.n||"";
   renderPhotos(); renderSig(); loadDraft(); renderDrafts();
-  planRows=lsGet(PLAN_KEY,[]); renderPlan(); renderSent(); renderMe();
+  planRows=lsGet(PLAN_KEY,[]); renderPlan(); renderPlanPicker(); renderSent(); renderMe();
 }
 function showView(v,btn){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
@@ -411,9 +607,15 @@ function showView(v,btn){
 /* ══════════ نموذج التقرير ══════════ */
 function onDomChange(){
   const d=$("f-dom").value;
-  $("f-progpick").innerHTML=`<option value="">— اختر من القائمة —</option>`+(AIP[d]||[]).map(p=>`<option>${esc(p)}</option>`).join("");
+  $("f-progpick").innerHTML=`<option value="">— اختر من القائمة —</option>`+progsFor(d).map(x=>`<option value="${esc(x.p)}">${esc(x.p)} · ${sessLabel(x.s[stageIdx()])}</option>`).join("");
+  renderPlanPicker();
 }
-function pickProg(){const v=$("f-progpick").value;if(v)$("f-prog").value=v;}
+function pickProg(){
+  const v=$("f-progpick").value;if(!v)return;
+  $("f-prog").value=v;
+  const n=sessFor($("f-dom").value,v);
+  if(n&&!$("f-sess").value)$("f-sess").value=n;   // عدد الحصص المقرر في الدليل
+}
 function pickSem(el){document.querySelectorAll("[data-sem]").forEach(c=>c.classList.remove("on"));el.classList.add("on");sem=el.dataset.sem;}
 function pickIco(el){const was=el.classList.contains("on");document.querySelectorAll("[data-ico]").forEach(c=>c.classList.remove("on"));if(was){ico="";}else{el.classList.add("on");ico=el.dataset.ico;}}
 
@@ -635,25 +837,91 @@ async function submitReport(){
 }
 
 /* ══════════ خطة المجال ══════════ */
+// قائمة البرامج المقررة للمجال في مرحلة المدرسة، مع عدد حصص كل برنامج
+function renderPlanPicker(){
+  const sel=$("p-progpick");if(!sel)return;
+  const dom=$("f-dom").value;
+  const list=progsFor(dom);
+  sel.innerHTML=`<option value="">— اختر برنامجاً من الدليل —</option>`
+    +list.map(x=>`<option value="${esc(x.p)}">${esc(x.p)} · ${sessLabel(x.s[stageIdx()])}</option>`).join("")
+    +`<option value="__other__">✏️ برنامج آخر — أكتبه بنفسي</option>`;
+  const note=$("plan-note");
+  if(note)note.innerHTML=`مجالك: <b>${esc(dom||"—")}</b> · المرحلة: <b>${esc(STAGES[stageIdx()])}</b><br>
+    مقرر لهذا المجال <b>${list.length}</b> برنامجاً في هذه المرحلة وفق دليل الخطط 1448هـ.
+    اختر برنامجاً فتُعبَّأ خاناته تلقائياً، أو ولّد الخطة كاملة بضغطة واحدة.`;
+  togglePlanCustom();
+}
+function togglePlanCustom(){
+  const v=$("p-progpick").value;
+  $("p-prog-wrap").style.display=(v==="__other__")?"block":"none";
+}
+// عند اختيار برنامج من الدليل تُعبَّأ بقية الخانات وفق المجال وعدد الحصص
+function onPlanProgPick(){
+  togglePlanCustom();
+  const v=$("p-progpick").value;
+  if(!v||v==="__other__"){$("p-sess").value="";return;}
+  fillPlanFields(v);
+}
+function fillPlanFields(prog){
+  const dom=$("f-dom").value;
+  const r=planRowFor(dom,prog);
+  $("p-sup").value=r.sup;
+  $("p-dur").value=r.dur;
+  $("p-place").value=r.place;
+  $("p-target").value=r.target;
+  $("p-sess").value=r.sess||"";
+}
+function autoFillPlanRow(){
+  const v=$("p-progpick").value;
+  const prog=(v&&v!=="__other__")?v:($("p-prog").value||"").trim();
+  if(!prog){toast("⚠️ اختر برنامجاً أو اكتب اسمه أولاً");return;}
+  fillPlanFields(prog);
+  toast("✨ عُبِّئت الخانات — عدّلها كما تشاء");
+}
+// يبني خطة المجال كاملة: كل برامج المجال المقررة لهذه المرحلة بحصصها وخاناتها
+function generateFullPlan(){
+  const dom=$("f-dom").value;
+  const list=progsFor(dom);
+  if(!list.length){toast("⚠️ لا توجد برامج مقررة لهذا المجال في هذه المرحلة");return;}
+  const have=new Set(planRows.map(r=>r.prog));
+  const fresh=list.filter(x=>!have.has(x.p));
+  if(!fresh.length){toast("✅ كل برامج المجال مضافة بالفعل");return;}
+  if(!confirm(`سيُضاف ${fresh.length} برنامجاً من برامج «${dom}» المقررة لمرحلة ${STAGES[stageIdx()]}، بحصصها وخاناتها معبّأة.\nهل تريد المتابعة؟`))return;
+  fresh.forEach(x=>planRows.push(planRowFor(dom,x.p)));
+  lsSet(PLAN_KEY,planRows);renderPlan();
+  toast(`⚡ أُضيف ${fresh.length} برنامجاً — راجعها وعدّلها`);
+}
 function addPlanRow(){
-  const prog=$("p-prog").value.trim();
-  if(!prog){toast("⚠️ اكتب اسم البرنامج");return;}
-  planRows.push({prog,field:$("f-dom").value,sup:$("p-sup").value.trim(),dur:$("p-dur").value.trim(),place:$("p-place").value.trim(),target:$("p-target").value.trim()});
-  ["p-prog","p-sup","p-dur","p-place","p-target"].forEach(i=>$(i).value="");
+  const v=$("p-progpick").value;
+  const prog=(v&&v!=="__other__")?v:($("p-prog").value||"").trim();
+  if(!prog){toast("⚠️ اختر برنامجاً أو اكتب اسمه");return;}
+  if(planRows.some(r=>r.prog===prog)){toast("⚠️ هذا البرنامج مضاف بالفعل");return;}
+  planRows.push({prog,field:$("f-dom").value,sup:$("p-sup").value.trim(),dur:$("p-dur").value.trim(),
+                 place:$("p-place").value.trim(),target:$("p-target").value.trim(),sess:+$("p-sess").value||0});
+  ["p-prog","p-sup","p-dur","p-place","p-target","p-sess"].forEach(i=>$(i).value="");
+  $("p-progpick").value="";togglePlanCustom();
   lsSet(PLAN_KEY,planRows);renderPlan();toast("✅ أُضيف للخطة");
 }
 function delPlanRow(i){planRows.splice(i,1);lsSet(PLAN_KEY,planRows);renderPlan();}
+function clearPlan(){
+  if(!planRows.length)return;
+  if(!confirm("حذف جميع برامج الخطة؟"))return;
+  planRows=[];lsSet(PLAN_KEY,planRows);renderPlan();toast("🗑️ فُرِّغت الخطة");
+}
 function renderPlan(){
-  $("plan-list").innerHTML=planRows.length?planRows.map((r,i)=>
+  const totalSess=planRows.reduce((s,r)=>s+(+r.sess||0),0);
+  $("plan-list").innerHTML=planRows.length?
+    `<div class="note" style="margin-bottom:9px;">عدد البرامج: <b>${planRows.length}</b> · مجموع الحصص: <b>${totalSess}</b></div>`
+    +planRows.map((r,i)=>
     `<div class="item"><div style="display:flex;justify-content:space-between;gap:8px;">
-      <div><div class="t">${i+1}. ${esc(r.prog)}</div>
+      <div><div class="t">${i+1}. ${esc(r.prog)}${r.sess?` <span style="opacity:.7;font-weight:400;">· ${esc(sessLabel(+r.sess))}</span>`:""}</div>
       <div class="m">${esc(r.sup||"—")} · ${esc(r.dur||"—")} · ${esc(r.place||"—")} · ${esc(r.target||"—")}</div></div>
       <button class="btn btn-d btn-sm" onclick="delPlanRow(${i})">🗑️</button></div></div>`).join("")
     :`<div class="empty"><span class="ic">🗂️</span>لم تُضف أي برنامج للخطة بعد</div>`;
 }
 async function submitPlan(){
   if(!planRows.length){toast("⚠️ أضف برنامجاً واحداً على الأقل");return;}
-  await send("plan",{domain:$("f-dom").value,rows:planRows},`خطة ${$("f-dom").value}`);
+  await send("plan",{domain:$("f-dom").value,stage:STAGES[stageIdx()],rows:planRows},`خطة ${$("f-dom").value}`);
 }
 
 /* ══════════ الإرسال ══════════ */
@@ -711,7 +979,13 @@ function renderSent(){
      <div class="m">${esc(x.at)} · <span class="badge ${x.how==="ملف"?"b-wait":"b-ok"}">${esc(x.how)}</span></div></div>`).join("")
     :`<div class="empty"><span class="ic">📤</span>لم ترسل أي تقرير بعد</div>`;
 }
+function renderStageChips(){
+  const box=$("stage-chips");if(!box)return;
+  const cur=stageIdx();
+  box.innerHTML=STAGES.map((s,i)=>`<div class="chip${i===cur?" on":""}" onclick="setStage(${i})">${esc(s)}</div>`).join("");
+}
 function renderMe(){
+  renderStageChips();
   $("me-info").innerHTML=`
     <div class="fg"><label>الاسم</label><div>${esc(CFG.n)}</div></div>
     <div class="fg"><label>المجالات المسؤول عنها</label><div>${esc((CFG.d||[]).join("، ")||"غير محدد")}</div></div>

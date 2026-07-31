@@ -1,6 +1,6 @@
 // خدمة العمل بدون إنترنت — تطبيق المعلم
 // يخزّن ملفات التطبيق فقط. بيانات المعلم تبقى في جهازه (localStorage) ولا تُخزَّن هنا.
-const CACHE = "nasha-teacher-v3";
+const CACHE = "nasha-teacher-v4";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
