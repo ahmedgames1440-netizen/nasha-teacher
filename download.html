@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تحميل منظومة النشاط الطلابي</title>
+<meta name="description" content="حمّل برنامج منظومة النشاط الطلابي — متوافق مع دليل الخطط الدراسية الإصدار السادس 1448هـ">
+<style>
+:root{--d:#103E47;--p:#1C5A66;--g:#4DAD7D;--b:#2C6FB3;--s:#F3F8F7;--br:#C8DDD0;--mu:#5A6B6B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--s);color:#17313A;
+     min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:18px}
+.bar{width:100%;max-width:560px;height:5px;border-radius:3px;
+     background:linear-gradient(90deg,var(--b),var(--p),var(--g));margin-bottom:18px}
+.card{width:100%;max-width:560px;background:#fff;border-radius:16px;padding:26px 22px;
+      box-shadow:0 8px 30px rgba(16,62,71,.12)}
+h1{font-size:22px;color:var(--d);text-align:center;line-height:1.5;margin-bottom:6px}
+.sub{text-align:center;color:var(--mu);font-size:13.5px;line-height:1.9;margin-bottom:20px}
+.badge{display:inline-block;background:var(--g);color:#0b2b22;border-radius:12px;
+       padding:2px 10px;font-size:12px;font-weight:800;margin-bottom:12px}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;border:0;cursor:pointer;
+     border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;font-family:inherit;margin-bottom:10px}
+.btn-p{background:var(--d);color:#fff}
+.btn-o{background:#fff;color:var(--d);border:2px solid var(--d)}
+.btn-g{background:var(--g);color:#0b2b22}
+.note{background:#FFF8E6;border-right:4px solid #C9A227;border-radius:9px;
+      padding:13px;font-size:13px;line-height:1.95;margin-bottom:16px}
+.note b{color:#8a6d00}
+.linkbox{display:flex;gap:8px;margin-bottom:14px}
+.linkbox input{flex:1;min-width:0;border:1.5px solid var(--br);border-radius:9px;
+               padding:11px;font-size:12px;direction:ltr;font-family:monospace;background:#fafdfb}
+.linkbox button{border:0;background:var(--p);color:#fff;border-radius:9px;padding:0 16px;
+                font-weight:800;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap}
+#qr{display:grid;place-items:center;padding:14px;background:#fff;border:1.5px solid var(--br);
+    border-radius:11px;margin-bottom:14px}
+#qr svg{display:block}
+.qcap{font-size:12.5px;color:var(--mu);text-align:center;margin-top:8px;line-height:1.7}
+.feats{border-top:1px solid var(--br);margin-top:18px;padding-top:16px}
+.feats h2{font-size:14px;color:var(--d);margin-bottom:10px}
+.feats li{list-style:none;font-size:13px;line-height:2.1;padding-right:20px;position:relative;color:#2c4a44}
+.feats li::before{content:"✓";color:var(--g);position:absolute;right:0;font-weight:900}
+.foot{text-align:center;font-size:12.5px;color:var(--mu);margin-top:18px;line-height:2}
+.foot a{color:var(--p);text-decoration:none;font-weight:700}
+.hide{display:none}
+@media(max-width:420px){h1{font-size:19px}.card{padding:20px 16px}}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<div class="card">
+  <div style="text-align:center"><span class="badge">الإصدار 1.6.0 — متوافق مع دليل 1448هـ</span></div>
+  <h1>منظومة النشاط الطلابي</h1>
+  <p class="sub">برنامج ويندوز متكامل لرائد ورائدة النشاط الطلابي</p>
+
+  <!-- يظهر على الكمبيوتر -->
+  <div id="pc" class="hide">
+    <a class="btn btn-p" id="dl" href="#">⬇️ تحميل البرنامج للويندوز</a>
+    <p class="qcap">حجم الملف نحو 76 ميجابايت</p>
+  </div>
+
+  <!-- يظهر على الجوال -->
+  <div id="mobile" class="hide">
+    <div class="note">
+      <b>هذا برنامج ويندوز</b> — لا يعمل على الجوال. افتح هذه الصفحة من جهاز الكمبيوتر،
+      أو امسح الباركود أدناه بكاميرا الكمبيوتر، أو انسخ الرابط وأرسله لنفسك.
+    </div>
+    <div class="linkbox">
+      <input id="url" readonly>
+      <button onclick="copyLink()">نسخ</button>
+    </div>
+    <div id="qr"></div>
+    <p class="qcap">امسح هذا الرمز من جهاز الكمبيوتر ليبدأ التحميل</p>
+    <a class="btn btn-g" href="./" style="margin-top:14px">📱 افتح تطبيق المعلم (يعمل على الجوال)</a>
+  </div>
+
+  <a class="btn btn-o" href="https://salla.sa/xesstore/?product_id=1143510500" target="_blank" rel="noopener">🛒 صفحة المنتج والشراء</a>
+
+  <div class="feats">
+    <h2>ما الذي في هذا الإصدار؟</h2>
+    <ul>
+      <li>وثيقة خطة النشاط كاملة بترويسة وزارة التعليم</li>
+      <li>15 خطة على بنك برامج 1448هـ (86 برنامجًا)</li>
+      <li>حاسبة نصاب النشاط 10% من الجدول</li>
+      <li>معايير تقييم رائد النشاط وشواهدها</li>
+      <li>المسابقات الطلابية والأيام والمناسبات المعتمدة</li>
+      <li>تطبيق جوال للمعلمين يرسل التقارير لجهازك</li>
+    </ul>
+  </div>
+
+  <p class="foot">
+    💬 <a href="https://wa.me/966539886510">واتساب</a> ·
+    📢 <a href="https://t.me/+kezKGKdU_lhkZWRk">تلقرام</a> ·
+    🎬 <a href="https://www.tiktok.com/@xes.store">تيك توك</a>
+  </p>
+</div>
+
+<script>
+const DL="https://github.com/ahmedgames1440-netizen/salla-product-covers/releases/download/nasha-tullab-v1.6.0/Setup.1.6.0.exe";
+document.getElementById("dl").href=DL;
+document.getElementById("url").value=DL;
+
+// نعرض ما يناسب الجهاز: تحميل مباشر على الكمبيوتر، وإرشاد وباركود على الجوال
+const isMobile=/Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
+document.getElementById(isMobile?"mobile":"pc").classList.remove("hide");
+
+function copyLink(){
+  const i=document.getElementById("url");
+  i.select(); i.setSelectionRange(0,99999);
+  const done=()=>{const b=event.target;const t=b.textContent;b.textContent="✓ نُسخ";setTimeout(()=>b.textContent=t,1800);};
+  if(navigator.clipboard)navigator.clipboard.writeText(i.value).then(done).catch(()=>{document.execCommand("copy");done();});
+  else{document.execCommand("copy");done();}
+}
+</script>
+<script src="qr.js"></script>
+<script>
+if(isMobile&&typeof qrSvg==="function"){
+  document.getElementById("qr").innerHTML=qrSvg(DL,240);
+}
+</script>
+</body>
+</html>
